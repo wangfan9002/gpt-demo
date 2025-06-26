@@ -45,8 +45,12 @@
         .user-message {
             background-color: #e3f2fd;
             align-self: flex-end;
+            margin-left: 24px;
+            text-align: right;
         }
         .ai-message {
+            margin-right: 24px;
+            text-align: left;
             background-color: #f1f8e9;
             align-self: flex-start;
         }
@@ -99,8 +103,47 @@
                 sendMessage();
             }
         }
-
         function sendMessage() {
+            let prompt = document.getElementById('prompt').value;
+            if (prompt == '') {return}
+
+            document.getElementById('send_btn').style.display = 'none';
+            document.getElementById('stop-response').style.display = 'inline-block';
+            isStopped = false;
+
+            // --- 1. 提交用户消息 ---
+            let chatMessages = document.getElementById('chat-messages');
+            let userMsg = document.createElement('div');
+            userMsg.className = 'message user-message';
+            userMsg.textContent = prompt;
+            chatMessages.appendChild(userMsg);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            document.getElementById('prompt').value = "";
+
+            // --- 2. 增加AI响应显示 ---
+            let aiMsg = document.createElement('div');
+            aiMsg.className = 'message ai-message';
+            aiMsg.textContent = '';  // 先空，后续追加
+            chatMessages.appendChild(aiMsg);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // --- 3. SSE输出到aiMsg (而不是清空整个聊天区) ---
+            evtSource = new EventSource(`/chat?sessionId=${sessionId}&prompt=${encodeURIComponent(prompt)}`);
+            evtSource.onmessage = function(event) {
+                aiMsg.textContent += event.data;  // 只累计SSE的内容到最新AI消息
+                chatMessages.scrollTop = chatMessages.scrollHeight; // 滚动到底部
+            };
+            evtSource.onerror = function() {
+                evtSource.close();
+                document.getElementById('stop-response').style.display = 'none';
+                document.getElementById('send_btn').style.display = '';
+                isStopped = true;
+            }
+        }
+
+
+        function sendMessage_bak() {
             let prompt = document.getElementById('prompt').value;
             if (prompt == '') {return}
 

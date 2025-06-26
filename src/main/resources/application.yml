@@ -1,5 +1,2 @@
-
-
-answer:
-  server:
-    http://localhost:8080/answer
+# 注意,冒号后面有一个空格
+modelUrl: http://localhost:8080/answer

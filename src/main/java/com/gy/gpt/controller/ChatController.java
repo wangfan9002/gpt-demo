@@ -1,5 +1,7 @@
 package com.gy.gpt.controller;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.gy.gpt.api.ChatRequest;
 import com.gy.gpt.api.ChatResponse;
@@ -20,7 +22,7 @@ import java.util.concurrent.*;
 public class ChatController {
     @Resource
     private RestTemplate restTemplate;
-    @Value("${answer.server:}")
+    @Value("${modelUrl:}")
     private String serverUrl;
 
     // 用于存储各个前端会话的emitter和状态
@@ -51,16 +53,20 @@ public class ChatController {
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 HttpEntity<ChatRequest> request = new HttpEntity<>(chatRequest, headers);
-                ChatResponse answer = restTemplate.postForObject(serverUrl, request, ChatResponse.class);
-                // log.info("answer:{}", answer);
-                String toPrint = (answer != null && answer.getData() != null) ? answer.getData() : "[无]";
+                String answer = restTemplate.postForObject(serverUrl, request, String.class);
+                // 1. 解析为 JSONObject
+                JSONObject jsonObject = JSON.parseObject(answer);
+                String response = jsonObject.getString("response");
+                log.info("answer:{}", answer);
+
+                String toPrint = (answer != null && response != null) ? response : "[无]";
                 for (int i = 0; i < toPrint.length(); i++) {
                     if (stopFlags.getOrDefault(sessionId, false)) {
                         emitter.send(SseEmitter.event().data("[已暂停]"));
                         break;
                     }
                     emitter.send(SseEmitter.event().data(toPrint.substring(i, i + 1)));
-                    Thread.sleep(80); // 逐字推送,可调快慢
+                    Thread.sleep(60); // 逐字推送,可调快慢
                 }
                 emitter.complete();
             } catch (Exception e) {

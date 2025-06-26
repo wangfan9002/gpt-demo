@@ -2,50 +2,71 @@ package com.gy.gpt.controller;
 
 import com.gy.gpt.api.ChatRequest;
 import com.gy.gpt.api.ChatResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+@Slf4j
 @RestController
 public class AnswerController {
+    private List<String> ansList = new ArrayList<>();
+    Random random = new Random(100);
 
     @RequestMapping("/answer")
     public Object answer(@RequestBody ChatRequest chatRequest) {
         ChatResponse response = new ChatResponse();
-        String str = "Guava Cache是在内存中缓存数据(JVM缓存/本地缓存)，相比较于数据库或redis存储，访问内存中的数据会更加高效。Guava官网介绍，下面的这几种情况可以考虑使用Guava Cache：\n" +
-                "\n" +
-                "    对性能有非常高的要求\n" +
-                "    愿意消耗一些内存空间来提升速度\n" +
-                "    预料到某些键会被多次查询 (热点数据)\n" +
-                "    缓存中存放的数据总量不会超出内存容量\n" +
-                "\n" +
-                "所以，可以将程序频繁用到的少量数据存储到Guava Cache中，以改善程序性能。下面对Guava Cache的用法进行详细的介绍。\n" +
-                "1. Guava cache 优势 (重点)\n" +
-                "\n" +
-                "    缓存过期和淘汰机制\n" +
-                "        GuavaCache中可以设置Key的过期时间，包括访问过期和创建过期\n" +
-                "        GuavaCache在缓存容量(maximumSize)达到指定大小时，采用LRU+FIFO的方式，将不常使用的键值从Cache中删除\n" +
-                "    并发处理能力\n" +
-                "        GuavaCache类似CurrentHashMap，是线程安全的。\n" +
-                "        提供了设置并发级别的api (concurrencyLevel(5))，使得缓存支持并发的写入和读取\n" +
-                "\n" +
-                "        采用分离锁机制，分离锁能够减小锁力度，提升并发能力; 分离锁是分拆锁定，把一个集合看分成若干partition, 每个partiton一把锁。ConcurrentHashMap就是分了16个区域，这16个区域之间是可以并发的。GuavaCache采用Segment做分区。\n" +
-                "\n" +
-                "    更新锁定\n" +
-                "        在缓存中查询某个key，如果不存在，则查源数据，并回填缓存\n" +
-                "        GuavaCache可以在CacheLoader的load方法中加以控制，对同一个key，只让一个请求去读源数据并回填缓存，其他请求阻塞等待。\n" +
-                "    集成数据源 (在缓存中读取不到时,可以去读数据源 并写入到缓存中)\n" +
-                "        在业务中操作缓存，都会操作缓存和数据源两部分GuavaCache的get可以集成数据源，在从缓存中读取不到时可以从数据源中读取数据并回填缓存\n" +
-                "    监控缓存加载/命中情况\n" +
-                "        统计缓存信息, recordStats() , 开启统计信息开关, 查看通过cache对象stats方法\n" +
-                "————————————————\n" +
-                "\n" +
-                "                            版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。\n" +
-                "                        \n" +
-                "原文链接：https://blog.csdn.net/m0_37989980/article/details/126413812";
-        str = chatRequest.getPrompt() + ", 我们的回答是这样的:" + str;
+        // chatRequest.getPrompt() + ", 我们的回答是这样的:" +
+        log.info("prompt:{}", chatRequest.getPrompt());
+        String str = getFromList();
         response.setCode(0);
-        response.setData(str);
+        response.setResponse(str);
         return response;
     }
+
+    private String getFromList() {
+        if (ansList.size() == 0) {
+            String str1 = "一. Guava Cache介绍\n" +
+                    "\n" +
+                    "Guava Cache是在内存中缓存数据(JVM缓存/本地缓存)，相比较于数据库或redis存储，访问内存中的数据会更加高效。Guava官网介绍，下面的这几种情况可以考虑使用Guava Cache：\n" +
+                    "\n" +
+                    "    对性能有非常高的要求\n" +
+                    "    愿意消耗一些内存空间来提升速度\n" +
+                    "    预料到某些键会被多次查询 (热点数据)\n" +
+                    "    缓存中存放的数据总量不会超出内存容量\n" +
+                    "————————————————\n" +
+                    "\n" +
+                    "                            版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。\n" +
+                    "                        \n" +
+                    "原文链接：https://blog.csdn.net/m0_37989980/article/details/126413812";
+            String str2 = "一、引言：Snowflake\n" +
+                    "换 CEO 背后的信号\n" +
+                    "\n" +
+                    "2024 年春天，云数据仓库的明星公司 Snowflake 宣布换帅，前 Google 广告业务负责人 Sridhar Ramaswamy 接替了曾带领 Snowflake 实现 600 亿美元估值的传奇 CEO Frank Slootman。\n" +
+                    "\n" +
+                    "如果你只是把这当成一次高管轮换，理解就不够透彻，因为这背后真正的隐喻是，数据仓库世界的范式，正在悄然巨变。";
+            String str3 = "产品工程\n" +
+                    "\n" +
+                    "目标：让 AI 能用和好用，用户用得明白、用得舒服、用得下去。从增长的视角就是，不仅要下载量，还要留存率和活跃度。\n" +
+                    "\n" +
+                    "产品工程在乎的是产品哲学、产品商业、交互设计和用户体验等综合思考，让 AI 不再只是“黑箱”，而是能做到有感知、有引导、有反馈，并且具备自我纠错的机制。我们先对产品工程做一个拆解，然后选择一些重点模块进行展开阐述它们在成就一款成功的 AI Agent 中所起到的作用。";
+            String str4 = "JAVA线上故障排查全套路\n" +
+                    "\n" +
+                    "线上故障主要会包括 cpu、磁盘、内存以及网络问题，而大多数故障可能会包含不止一个层面的问题，所以进行排查时候尽量四个方面依次排查一遍。同时例如 jstack\n" +
+                    "、jmap 等工具也是不囿于一个方面的问题的，基本上出问题就是 df、free、top 三连，然后依次 jstack、jmap 伺候，具体问题具体分析即可。";
+            ansList.add(str1);
+            ansList.add(str2);
+            ansList.add(str3);
+            ansList.add(str4);
+        }
+
+        int randomIndex = random.nextInt(20);
+        int index = Math.abs(randomIndex) % 4;
+        return ansList.get(index);
+    }
+
 }
