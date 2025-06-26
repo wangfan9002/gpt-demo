@@ -1,4 +1,4 @@
-package com.gy.gpt;
+package com.gy.gpt.controller;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.gy.gpt.api.ChatRequest;

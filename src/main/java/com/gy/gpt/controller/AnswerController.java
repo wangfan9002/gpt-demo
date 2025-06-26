@@ -1,4 +1,4 @@
-package com.gy.gpt;
+package com.gy.gpt.controller;
 
 import com.gy.gpt.api.ChatRequest;
 import com.gy.gpt.api.ChatResponse;
