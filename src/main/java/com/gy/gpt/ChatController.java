@@ -52,7 +52,7 @@ public class ChatController {
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 HttpEntity<ChatRequest> request = new HttpEntity<>(chatRequest, headers);
                 ChatResponse answer = restTemplate.postForObject(serverUrl, request, ChatResponse.class);
-                log.info("answer:{}", answer);
+                // log.info("answer:{}", answer);
                 String toPrint = (answer != null && answer.getData() != null) ? answer.getData() : "[无]";
                 for (int i = 0; i < toPrint.length(); i++) {
                     if (stopFlags.getOrDefault(sessionId, false)) {
