@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI在线问答</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f9;
+        }
+        .chat-container {
+            width: 80%;
+            max-width: 600px;
+            height: 80vh;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            padding: 15px;
+            background-color: #007bff;
+            color: white;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            align-self: flex-end;
+        }
+        .ai-message {
+            background-color: #f1f8e9;
+            align-self: flex-start;
+        }
+        .chat-input {
+            padding: 15px;
+            border-top: 1px solid #ddd;
+            display: flex;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        .chat-input button {
+            padding: 8px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #stop-response {
+            background-color: #dc3545;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>AI在线问答</h2>
+        </div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input">
+            <input type="text" id="prompt" onkeyup="chatKeyup(event)" placeholder="输入您的消息...">
+            <button onclick="sendMessage()" id="send_btn">发送</button>
+            <button id="stop-response" onclick="stopResponse()" style="display: none;">停止响应</button>
+        </div>
+    </div>
+    <script>
+        let evtSource;
+        let sessionId = Math.random().toString(36).substring(2); // 简单模拟session
+        let isStopped = true;
+
+        function chatKeyup(event) {
+            // 判断是否按下的是 Enter 建
+            if (event.keyCode === 13 && isStopped) {
+                sendMessage();
+            }
+        }
+
+        function sendMessage() {
+            let prompt = document.getElementById('prompt').value;
+            if (prompt == '') {return}
+
+            document.getElementById('send_btn').style.display = 'none';
+            document.getElementById('chat-messages').textContent = '';
+
+            document.getElementById('stop-response').style.display = 'inline-block';
+            isStopped = false;
+
+            evtSource = new EventSource(`/chat?sessionId=${sessionId}&prompt=${encodeURIComponent(prompt)}`);
+            document.getElementById('prompt').value = "";
+            evtSource.onmessage = function(event) {
+                document.getElementById('chat-messages').textContent += event.data;
+            };
+            evtSource.onerror = function() {
+                evtSource.close();
+            }
+
+        }
+
+
+        function stopResponse() {
+            isStopped = true;
+            document.getElementById('stop-response').style.display = 'none';
+            document.getElementById('send_btn').style.display = '';
+            fetch(`/chat/stop?sessionId=${sessionId}`, {method: 'POST'})
+                    .then(() => {
+                        if (evtSource) evtSource.close();
+                    });
+        }
+    </script>
+</body>
+</html>

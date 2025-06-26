@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat (SSE暂停示例)</title>
+    <script>
+        let evtSource;
+        let sessionId = Math.random().toString(36).substring(2); // 简单模拟session
+
+        function startChat() {
+            document.getElementById('output').textContent = '';
+            let prompt = document.getElementById('prompt').value;
+            evtSource = new EventSource(`/chat?sessionId=${sessionId}&prompt=${encodeURIComponent(prompt)}`);
+            evtSource.onmessage = function(event) {
+                document.getElementById('output').textContent += event.data;
+            };
+            evtSource.onerror = function() {
+                evtSource.close();
+            }
+        }
+
+        function stopChat() {
+            fetch(`/chat/stop?sessionId=${sessionId}`, {method: 'POST'})
+                    .then(() => {
+                        if (evtSource) evtSource.close();
+                    });
+        }
+    </script>
+</head>
+<body>
+<h2>Chat with GPT-like (SSE 流+随时中断)</h2>
+<input type="text" id="prompt" value="你好" />
+<button onclick="startChat()">开始对话</button>
+<button onclick="stopChat()">暂停输出</button>
+<pre id="output" style="background: #222; color: #cfc; padding: 10px; min-height: 200px"></pre>
+</body>
+</html>
