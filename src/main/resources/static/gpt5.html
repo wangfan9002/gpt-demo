@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI在线问答</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            height: 100vh;
+        }
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+        }
+        /* 顶部区域 */
+        .top-bar {
+            background: #007bff;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            height: 60px;
+            min-height: 60px;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+        }
+        .menu-items {
+            display: flex;
+            gap: 18px;
+            font-size: 15px;
+        }
+        .main-layout {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            background: #f4f4f9;
+        }
+        /* 侧边栏，支持折叠 */
+        .sidebar {
+            width: 220px;
+            min-width: 130px;
+            background: #fff;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.2s;
+            position: relative;
+        }
+        .sidebar.collapsed {
+            width: 40px;
+            min-width: 40px;
+            overflow: hidden;
+        }
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 12px 10px 16px;
+            font-size: 16px;
+        }
+        .sidebar-btn {
+            padding: 7px 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 8px 0 8px 16px;
+            font-size: 15px;
+            display: block;
+            width: 120px;
+        }
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2px 0 10px 0;
+        }
+        .chat-list-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            border-left: 4px solid transparent;
+            font-size: 15px;
+        }
+        .chat-list-item.active {
+            background: #e3f2fd;
+            border-left: 4px solid #007bff;
+            font-weight: bold;
+        }
+        /* 折叠按钮 */
+        .sidebar-toggle {
+            position: absolute;
+            right: -13px;
+            top: 10px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 2px 6px #0001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+        .sidebar.collapsed .sidebar-header,
+        .sidebar.collapsed .sidebar-btn,
+        .sidebar.collapsed .chat-list-item {
+            display: none;
+        }
+        .sidebar.collapsed .sidebar-toggle {
+            right: -13px;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            background-color: white;
+        }
+        .chat-header {
+            padding: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            background-color: #f8f9fa;
+            color: #333;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .chat-messages {
+            display: flex;
+            flex-direction: column;
+
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            min-height: 0;
+        }
+        .message {
+            display: inline-block;
+            max-width: 75%;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            word-break: break-word;
+        }
+
+        /* 用户气泡右侧，AI左侧 */
+        .user-message {
+            background-color: #d2f9d1;
+            align-self: flex-end;
+            color: #222831;
+            font-size: 14px;
+            line-height: 1.625;
+            text-align: left;
+        }
+        .ai-message {
+            background-color: #fff;
+            color: #222831;
+            font-size: 14px;
+            align-self: flex-start;
+            text-align: left;
+        }
+        .ai-message p {
+            position: relative;
+            padding-left: 2em;
+            margin: 5px 0;
+        }
+        .ai-message p::before {
+            content: "🤖";
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-size: 18px;
+        }
+        .chat-input {
+            padding: 15px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            background: #f8f9fa;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        .chat-input button {
+            padding: 8px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #stop-response {
+            background-color: #dc3545;
+            margin-left: 10px;
+        }
+        @media (max-width: 800px) {
+            .sidebar {
+                display: none;
+            }
+            .main-layout {
+                flex-direction: column;
+            }
+        }
+        .model-select-floating {
+            position: fixed;
+            top: 10px;
+            right: 12px;
+            z-index: 999;
+            background: #fff;
+            box-shadow: 0 2px 12px #00000016;
+            border-radius: 8px;
+            padding: 8px 15px;
+            display: flex;
+            align-items: center;
+            border: 1px solid #e0e0e0;
+        }
+        .model-select-floating select {
+            font-size: 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            padding: 3px 10px;
+        }
+    </style>
+</head>
+<body>
+<!-- 浮动模型下拉 -->
+<div class="model-select-floating">
+    <label for="model-select" style="margin-right:8px;font-weight:bold;">模型：</label>
+    <select id="model-select">
+        <option value="deepseek">deepseek</option>
+        <option value="gpt3">gpt3</option>
+        <option value="gpt4">gpt4</option>
+    </select>
+</div>
+<div class="app-container">
+    <!-- 顶部logo和菜单 -->
+    <div class="top-bar">
+        <div class="logo">🤖 AI问答</div>
+        <!--
+        <div class="menu-items">
+            <span>菜单1</span>
+            <span>菜单2</span>
+        </div>
+        -->
+    </div>
+    <!-- 下方主内容：左右结构 -->
+    <div class="main-layout">
+        <nav class="sidebar" id="sidebar">
+            <button class="sidebar-toggle" id="sidebar-toggle" title="折叠/展开侧边栏">&lt;</button>
+            <div class="sidebar-header">会话列表</div>
+            <button class="sidebar-btn" onclick="createNewChat()">新建聊天</button>
+            <div class="chat-list" id="chat-list"></div>
+        </nav>
+        <div class="chat-container">
+            <div class="chat-header">
+                AI在线问答
+            </div>
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input">
+                <input type="text" id="prompt" onkeyup="chatKeyup(event)" placeholder="输入您的消息...">
+                <button onclick="sendMessage()" id="send_btn">发送</button>
+                <button id="stop-response" onclick="stopResponse()" style="display: none;">停止响应</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    // 侧边栏折叠
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggleBtn = document.getElementById('sidebar-toggle');
+    let isSidebarCollapsed = false;
+    sidebarToggleBtn.onclick = function() {
+        isSidebarCollapsed = !isSidebarCollapsed;
+        sidebar.classList.toggle('collapsed', isSidebarCollapsed);
+        sidebarToggleBtn.innerHTML = isSidebarCollapsed ? '>' : '&lt;';
+    };
+
+    // 聊天会话数据管理（每个会话有独立的sessionId）
+    let chatSessions = []; // [{ id, name, sessionId, messages:[{role, content}] }]
+    let currentChatId = null;
+    let evtSource = null;
+    let isStopped = true;
+    let aiBuffer = '';
+
+    // 初始化
+    function init() {
+        createNewChat(); // 默认新建会话
+    }
+
+    // 新建聊天：生成新的sessionId并关联到会话
+    function createNewChat() {
+        let newId = Math.random().toString(36).substr(2, 10);
+        let newSessionId = Math.random().toString(36).substring(2); // 新 sessionId
+        let chatName = "新对话 " + (chatSessions.length + 1);
+        chatSessions.push({
+            id: newId,
+            name: chatName,
+            sessionId: newSessionId,
+            messages: []
+        });
+        currentChatId = newId;
+        renderChatList();
+        renderChatMessages();
+        stopResponse();
+    }
+
+    // 渲染左侧会话列表
+    function renderChatList() {
+        let list = document.getElementById('chat-list');
+        list.innerHTML = '';
+        chatSessions.forEach(chat => {
+            let item = document.createElement('div');
+            item.className = 'chat-list-item' + (chat.id === currentChatId ? ' active' : '');
+            item.textContent = chat.name;
+            item.title = 'sessionId: ' + chat.sessionId;
+            item.onclick = function () {
+                if (!isStopped) stopResponse();
+                currentChatId = chat.id;
+                renderChatList();
+                renderChatMessages();
+            };
+            list.appendChild(item);
+        });
+    }
+
+    // 渲染聊天消息
+    function renderChatMessages() {
+        let container = document.getElementById('chat-messages');
+        container.innerHTML = '';
+        let chat = chatSessions.find(c => c.id === currentChatId);
+        if (!chat) return;
+        chat.messages.forEach(msg => {
+            if (msg.role === 'user') {
+                let d = document.createElement('div');
+                d.className = 'message user-message';
+                d.textContent = msg.content;
+                container.appendChild(d);
+            } else if (msg.role === 'ai') {
+                let d = document.createElement('div');
+                d.className = 'message ai-message';
+                // 按段落拆分成<p>
+                let paragraphs = msg.content.split(/\n+/).filter(t => t.trim());
+                paragraphs.forEach(ptext => {
+                    let p = document.createElement('p');
+                    p.textContent = ptext;
+                    d.appendChild(p);
+                });
+                container.appendChild(d);
+            }
+        });
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function chatKeyup(event) {
+        if (event.keyCode === 13 && isStopped) {
+            sendMessage();
+        }
+    }
+
+    function sendMessage() {
+        let prompt = document.getElementById('prompt').value.trim();
+        if (prompt === '' || !currentChatId) return;
+
+        document.getElementById('send_btn').style.display = 'none';
+        document.getElementById('stop-response').style.display = 'inline-block';
+        isStopped = false;
+
+        let chat = chatSessions.find(c => c.id === currentChatId);
+        if (!chat) return;
+        chat.messages.push({ role: 'user', content: prompt });
+
+        renderChatMessages();
+        document.getElementById('prompt').value = "";
+
+        chat.messages.push({ role: 'ai', content: '' });
+        renderChatMessages();
+
+        let aiMsgIdx = chat.messages.length - 1;
+        aiBuffer = '';
+        let sessionId = chat.sessionId;   // 每个会话用独立sessionId
+
+        let modelType = document.getElementById('model-select').value;
+        evtSource = new EventSource(`/chat?sessionId=${sessionId}&prompt=${encodeURIComponent(prompt)}&model=${encodeURIComponent(modelType)}`);
+
+        evtSource.onmessage = function(event) {
+            aiBuffer += event.data;
+            chat.messages[aiMsgIdx].content = aiBuffer;
+            renderChatMessages();
+        };
+        evtSource.onerror = function() {
+            evtSource.close();
+            document.getElementById('stop-response').style.display = 'none';
+            document.getElementById('send_btn').style.display = '';
+            isStopped = true;
+        };
+    }
+
+    function stopResponse() {
+        isStopped = true;
+        document.getElementById('stop-response').style.display = 'none';
+        document.getElementById('send_btn').style.display = '';
+        if (evtSource) evtSource.close();
+        let chat = chatSessions.find(c => c.id === currentChatId);
+        if(chat && chat.sessionId) {
+            fetch(`/chat/stop?sessionId=${chat.sessionId}`, {method: 'POST'});
+        }
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
