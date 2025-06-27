@@ -4,8 +4,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.gy.gpt.api.ChatRequest;
-import com.gy.gpt.api.ChatResponse;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -15,9 +15,11 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.annotation.Resource;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.*;
 
-@Slf4j
 @RestController
 public class ChatController {
     @Resource
@@ -28,6 +30,8 @@ public class ChatController {
     // 用于存储各个前端会话的emitter和状态
     private final ConcurrentHashMap<String, SseEmitter> emitters = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Boolean> stopFlags = new ConcurrentHashMap<>();
+
+    private static final Logger log = LoggerFactory.getLogger(ChatController.class);
 
     private ThreadPoolExecutor threadPool = new ThreadPoolExecutor(3, 20,
             60L, TimeUnit.SECONDS,
@@ -52,7 +56,15 @@ public class ChatController {
             try {
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
-                HttpEntity<ChatRequest> request = new HttpEntity<>(chatRequest, headers);
+                Map<String, Object> dataMap = new HashMap();
+               // Map<String, Object> inferMap = new HashMap();
+                Map<String, String> msgMap = new HashMap();
+                msgMap.put("role", "user");
+                msgMap.put("content", prompt);
+                dataMap.put("messages", Arrays.asList(msgMap));
+
+                HttpEntity<Map<String, Object>> request = new HttpEntity<>(dataMap, headers);
+
                 String answer = restTemplate.postForObject(serverUrl, request, String.class);
                 // 1. 解析为 JSONObject
                 JSONObject jsonObject = JSON.parseObject(answer);

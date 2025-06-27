@@ -1,8 +1,12 @@
 package com.gy.gpt.controller;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.gy.gpt.api.ChatRequest;
 import com.gy.gpt.api.ChatResponse;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,17 +15,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-@Slf4j
 @RestController
 public class AnswerController {
+    private static final Logger log = LoggerFactory.getLogger(AnswerController.class);
     private List<String> ansList = new ArrayList<>();
     Random random = new Random(100);
 
     @RequestMapping("/answer")
-    public Object answer(@RequestBody ChatRequest chatRequest) {
+    public Object answer(@RequestBody JSONObject chatRequest) {
         ChatResponse response = new ChatResponse();
         // chatRequest.getPrompt() + ", 我们的回答是这样的:" +
-        log.info("prompt:{}", chatRequest.getPrompt());
+        log.info("chatRequest:{}", chatRequest);
+     //   JSONObject jsonObject = JSON.parseObject(chatRequest.toString());
+        JSONArray msg = chatRequest.getJSONArray("messages");
+        JSONObject json = msg.getJSONObject(0);
+        String prompt = json.getString("content");
+        log.info("prompt:{}", prompt);
         String str = getFromList();
         response.setCode(0);
         response.setResponse(str);
