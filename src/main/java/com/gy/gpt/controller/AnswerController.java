@@ -32,9 +32,26 @@ public class AnswerController {
         String prompt = json.getString("content");
         log.info("prompt:{}", prompt);
         String str = getFromList();
-        response.setCode(0);
-        response.setResponse(str);
-        return response;
+
+
+
+        JSONArray choices = new JSONArray();
+        // jsonObject.getJSONArray("choices");
+        JSONObject messageJson = new JSONObject();
+        messageJson.put("content", str);
+        messageJson.put("role", "ai");
+        JSONObject oneChoice = new JSONObject();
+        oneChoice.put("message", messageJson);
+
+        choices.add(oneChoice);
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("model", "BaiChuan");
+        jsonObject.put("choices", choices);
+
+        //response.setCode(0);
+        // response.setResponse(JSON.toJSONString(jsonObject));
+        return JSON.toJSONString(jsonObject);
     }
 
     private String getFromList() {
@@ -67,14 +84,22 @@ public class AnswerController {
                     "\n" +
                     "线上故障主要会包括 cpu、磁盘、内存以及网络问题，而大多数故障可能会包含不止一个层面的问题，所以进行排查时候尽量四个方面依次排查一遍。同时例如 jstack\n" +
                     "、jmap 等工具也是不囿于一个方面的问题的，基本上出问题就是 df、free、top 三连，然后依次 jstack、jmap 伺候，具体问题具体分析即可。";
+            String str5 = "### Header 3" +
+                    "" +
+                    "> This is a blockquote." +
+                    ">" +
+                    "> This is the second paragraph in the blockquote." +
+                    ">" +
+                    "> ## This is an H2 in a blockquote";
             ansList.add(str1);
             ansList.add(str2);
             ansList.add(str3);
             ansList.add(str4);
+            ansList.add(str5);
         }
 
         int randomIndex = random.nextInt(20);
-        int index = Math.abs(randomIndex) % 4;
+        int index = Math.abs(randomIndex) % ansList.size();
         return ansList.get(index);
     }
 

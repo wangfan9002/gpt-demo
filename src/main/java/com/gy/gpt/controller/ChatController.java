@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.gy.gpt.api.ChatRequest;
+import com.gy.gpt.service.ChatService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +28,8 @@ public class ChatController {
     private RestTemplate restTemplate;
     @Value("${modelUrl:}")
     private String serverUrl;
+    @Resource
+    private ChatService chatService;
 
     // 用于存储各个前端会话的emitter和状态
     private final ConcurrentHashMap<String, SseEmitter> emitters = new ConcurrentHashMap<>();
@@ -41,47 +44,19 @@ public class ChatController {
 
     @GetMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chatStream(@RequestParam String sessionId,
-                                 @RequestParam String prompt) {
-
+                                 @RequestParam String prompt
+                                 ,@RequestParam(required = false) String model) {
 
         SseEmitter emitter = new SseEmitter(300_000L); // 不超时
         emitters.put(sessionId, emitter);
         stopFlags.put(sessionId, false);
-        ChatRequest chatRequest = new ChatRequest();
-        chatRequest.setSessionId(sessionId);
-        chatRequest.setPrompt(prompt);
-        log.info("serverUrl:{}", serverUrl);
-        // 模拟流式回复（可换成实际的LLM对话流逻辑）
 
+        log.info("serverUrl:{}, model:{}", serverUrl, model);
+        // 模拟流式回复（可换成实际的LLM对话流逻辑）
         threadPool.submit(() -> {
             try {
-                HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.APPLICATION_JSON);
-                Map<String, Object> dataMap = new HashMap();
-               // Map<String, Object> inferMap = new HashMap();
-                Map<String, String> msgMap = new HashMap();
-                msgMap.put("role", "user");
-                msgMap.put("content", prompt);
-                dataMap.put("model", "Baichuan-M1-14B-Instruct");
-                dataMap.put("messages", Arrays.asList(msgMap));
-                dataMap.put("temperature", 0);
-                log.info("request:{}", JSON.toJSON(dataMap));
-                HttpEntity<Map<String, Object>> request = new HttpEntity<>(dataMap, headers);
-
-                String answer = restTemplate.postForObject(serverUrl, request, String.class);
-                log.info("answer:{}", answer);
-                // 1. 解析为 JSONObject
-                // {"model":"Baichuan-M1-14B-Instruct","choices":[{"index":0,"message":{"role":"assistant","content":"I'm Assistant. How can I assist you today?","tool_calls":null},"finish_reason":"stop","logprobs":null}],"usage":{"prompt_tokens":14,"completion_tokens":13,"total_tokens":27}
-                // ,"id":"chatcmpl-4b8b65409730468ab9af257a7f93143f","object":"chat.completion","created":1751210854
-                JSONObject jsonObject = JSON.parseObject(answer);
-                JSONArray choices = jsonObject.getJSONArray("choices");
-                log.info("choices:{}", choices);
-                JSONObject oneChoice = choices.getJSONObject(0);
-                log.info("oneChoice:{}", oneChoice);
-                JSONObject jsonMessage = oneChoice.getJSONObject("message");
-                log.info("jsonMessage:{}", jsonMessage);
-                String response = jsonMessage.getString("content");
-                String toPrint = (answer != null && response != null) ? response : "[无]";
+                String response = chatService.chat(sessionId, prompt);
+                String toPrint = (response != null && response != null) ? response : "[无]";
                 for (int i = 0; i < toPrint.length(); i++) {
                     if (stopFlags.getOrDefault(sessionId, false)) {
                         emitter.send(SseEmitter.event().data("[已暂停]"));
