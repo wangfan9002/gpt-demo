@@ -2,11 +2,6 @@
 modelUrl: http://localhost:8080/answer
 
 
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/user?useUnicode=true&characterEncoding=utf8&useSSL=false&rewriteBatchedStatements=true&allowMultiQueries=true&autoReconnect=true
-    username: mysql
-    password: mysql
 
 mybatis-plus:
   configuration:
@@ -14,6 +9,13 @@ mybatis-plus:
 #  global-config:
 #    db-config:
 #      id-type: auto # 主键自增
+
+jwt:
+  secret: "your-256-bit-secret-your-256-bit-secret-your-256-bit-secret" # 至少32字符
+  expiration: 86400 # token有效期(秒)，默认24小时
+  cookie-name: "utoken" # cookie名称
+#  cookie-domain: "example.com" # 可选，生产环境应设置
+  cookie-secure: true # 生产环境应为true
 
 springdoc:
   api-docs:
