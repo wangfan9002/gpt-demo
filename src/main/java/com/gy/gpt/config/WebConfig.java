@@ -23,7 +23,7 @@ public class WebConfig implements WebMvcConfigurer {
 
         registry.addInterceptor(jwtInterceptor)
                 .addPathPatterns("/api/**") // 保护所有/api路径
-                .excludePathPatterns("/api/user/login"); // 排除认证相关路径
+                .excludePathPatterns("/api/user/login", "/api/user/sendCode"); // 排除认证相关路径
     }
 
     @Override

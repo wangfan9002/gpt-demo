@@ -5,6 +5,7 @@ import com.gy.gpt.common.Result;
 import com.gy.gpt.exception.ErrorCode;
 import com.gy.gpt.util.JwtUtil;
 import com.gy.gpt.util.LoginContext;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -16,6 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
+@Slf4j
 @Component
 public class JwtInterceptor implements HandlerInterceptor {
 
@@ -41,6 +43,7 @@ public class JwtInterceptor implements HandlerInterceptor {
         if (token != null) {
             String userId = jwtUtil.validateTokenAndGetUsername(token);
             if (userId != null && !jwtUtil.isTokenExpired(token)) {
+                log.info("当前操作人:{}", userId);
                 // 将用户ID存入请求属性，供后续使用
                 LoginContext.setLoginInfo(Long.parseLong(userId));
                 return true;

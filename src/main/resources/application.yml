@@ -14,6 +14,11 @@ mybatis-plus:
 #  global-config:
 #    db-config:
 #      id-type: auto # 主键自增
+file:
+  upload:
+    allowed-extensions: txt  # 默认只允许txt
+    max-size: 10MB          # 单个文件最大大小
+    location: ./uploads      # 文件存储目录
 
 springdoc:
   api-docs:

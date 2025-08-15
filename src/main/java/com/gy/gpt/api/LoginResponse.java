@@ -12,4 +12,6 @@ public class LoginResponse {
     private Long userId;
     @Schema(description = "用户token", example = "ad23**")
     private String token;
+    @Schema(description = "用户头像", example = "ad23**")
+    private String headerImg;
 }

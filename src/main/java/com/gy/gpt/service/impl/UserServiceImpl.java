@@ -21,11 +21,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public User regOrLogin(String mobile, String validCode, String unitName) {
         log.info("mobile:{},code:{},unitName:{}", mobile, validCode, unitName);
-        if (StringUtils.isEmpty(mobile)) {
-            throw new BusinessException(ErrorCode.MOBILE_NOT_EMPTY);
-        }
         User user = this.lambdaQuery().eq(User::getMobile, mobile).one();
         if (user == null) {
+            if (StringUtils.isEmpty(unitName)) {
+                throw new BusinessException(ErrorCode.UNIT_NAME_NOT_EMPTY);
+            }
             User regUser = new User();
             regUser.setMobile(mobile);
             regUser.setUnitName(unitName);
@@ -33,6 +33,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             regUser.setTokenSecret(validCode);
             this.save(regUser);
             return regUser;
+        }
+
+        if (StringUtils.isNotEmpty(unitName)) {
+            user.setUnitName(unitName);
+            this.updateById(user);
         }
         return user;
     }
